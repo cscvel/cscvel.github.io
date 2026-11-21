@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CS CVEL Stats</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
+  --text:#e8eaf0; --muted:#8b93a7; --accent:#2fd4a3; --win:#3ddc84; --loss:#ff5c5c; --draw:#c9a227;
+  --l1:#e6e6e6; --l2:#1ce400; --l4:#ffc800; --l8:#ff6309; --l10:#fe1f00;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-size:14px}
+a{color:inherit;text-decoration:none}
+.mono{font-family:"JetBrains Mono",monospace}
+header{position:sticky;top:0;z-index:5;background:rgba(15,17,21,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.bar{max-width:1180px;margin:0 auto;padding:0 16px;height:56px;display:flex;align-items:center;gap:24px}
+.brand{font-weight:800;letter-spacing:.5px;font-size:16px;display:flex;align-items:center;gap:8px}
+.brand i{display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent);transform:rotate(45deg)}
+nav{display:flex;gap:4px}
+nav a{padding:8px 12px;border-radius:6px;color:var(--muted);font-weight:600}
+nav a.on,nav a:hover{color:var(--text);background:var(--panel2)}
+.upd{margin-left:auto;color:var(--muted);font-size:12px}
+main{max-width:1180px;margin:0 auto;padding:24px 16px 64px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin:28px 0 12px;font-weight:700}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.grid{display:grid;gap:12px}
+.empty{padding:48px;text-align:center;color:var(--muted)}
+/* lista de partidas */
+.mrow{display:grid;grid-template-columns:110px 1fr auto 1fr 120px;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.mrow:last-child{border-bottom:0}
+.mrow:hover{background:var(--panel2)}
+.mapchip{font-weight:700;text-transform:capitalize}
+.mapchip small{display:block;color:var(--muted);font-weight:500;font-size:12px;margin-top:2px}
+.tname{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tname.r{text-align:right}
+.score{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:18px;white-space:nowrap}
+.score .w{color:var(--win)} .score .l{color:var(--muted)}
+.when{text-align:right;color:var(--muted);font-size:12px}
+/* placar */
+.hero{padding:24px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;background:linear-gradient(180deg,var(--panel2),var(--panel))}
+.hero .tn{font-size:20px;font-weight:800}
+.hero .tn.r{text-align:right}
+.hero .big{font-family:"JetBrains Mono",monospace;font-size:44px;font-weight:700;text-align:center;line-height:1}
+.hero .big .w{color:var(--win)} .hero .big .l{color:var(--loss)}
+.hero .meta{text-align:center;color:var(--muted);font-size:12px;margin-top:8px;text-transform:capitalize}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;margin-left:8px;vertical-align:middle}
+.tag.W{background:rgba(61,220,132,.15);color:var(--win)} .tag.L{background:rgba(255,92,92,.15);color:var(--loss)} .tag.D{background:rgba(201,162,39,.15);color:var(--draw)}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:820px}
+th,td{padding:10px 12px;text-align:right;white-space:nowrap}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:700;border-bottom:1px solid var(--line);cursor:pointer;user-select:none}
+th:first-child,td:first-child{text-align:left}
+tbody tr{border-bottom:1px solid var(--line)} tbody tr:last-child{border-bottom:0}
+tbody tr:hover{background:var(--panel2)}
+td.num{font-family:"JetBrains Mono",monospace}
+.pos{color:var(--win)} .neg{color:var(--loss)}
+.who{display:flex;align-items:center;gap:10px;font-weight:600}
+.lvl{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;border:2px solid currentColor;flex:none;background:rgba(0,0,0,.25)}
+.thead-team{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);font-weight:800}
+/* perfil */
+.prof{padding:24px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.prof .lvl{width:64px;height:64px;font-size:26px;border-width:4px}
+.prof h1{margin:0;font-size:26px}
+.prof .sub{color:var(--muted);margin-top:4px}
+.prof .elo{margin-left:auto;text-align:right}
+.prof .elo b{font-family:"JetBrains Mono",monospace;font-size:32px}
+.tiles{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.tile{padding:16px}
+.tile .k{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:700}
+.tile .v{font-family:"JetBrains Mono",monospace;font-size:24px;font-weight:700;margin-top:6px}
+.spark{padding:16px}
+.spark svg{width:100%;height:140px;display:block}
+.back{color:var(--muted);font-weight:600;display:inline-block;margin-bottom:12px}
+.back:hover{color:var(--text)}
+@media (max-width:720px){
+  .mrow{grid-template-columns:1fr auto 1fr;}
+  .mrow .mapchip,.mrow .when{display:none}
+  .hero{grid-template-columns:1fr;text-align:center}
+  .hero .tn,.hero .tn.r{text-align:center}
+  .upd{display:none}
+}
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <a class="brand" href="#/"><i></i>CS CVEL Stats</a>
+  <nav><a href="#/" data-r="home">Partidas</a><a href="#/ranking" data-r="ranking">Ranking</a></nav>
+  <span class="upd" id="upd"></span>
+</div></header>
+<main id="app"><div class="empty">Carregando…</div></main>
+
+<script>
+let DATA = null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const mapName = m => esc(String(m || "").replace(/^de_/, ""));
+const lvlColor = l => l >= 10 ? "var(--l10)" : l >= 8 ? "var(--l8)" : l >= 4 ? "var(--l4)" : l >= 2 ? "var(--l2)" : "var(--l1)";
+const lvl = l => `<span class="lvl" style="color:${lvlColor(l)}">${l}</span>`;
+const fmtDate = s => { if (!s) return ""; const d = new Date(String(s).replace(" ", "T")); return isNaN(d) ? esc(s) : d.toLocaleString("pt-BR", {day:"2-digit", month:"2-digit", year:"2-digit", hour:"2-digit", minute:"2-digit"}); };
+const sign = n => n > 0 ? `<span class="pos">+${n}</span>` : n < 0 ? `<span class="neg">${n}</span>` : "0";
+const teamLabel = n => esc(String(n || "").replace(/^team_/, "time "));
+
+function home() {
+  const ms = DATA.matches;
+  if (!ms.length) return `<div class="card empty">Nenhuma partida terminada ainda. Joguem uma até o fim e ela aparece aqui.</div>`;
+  const top = DATA.players.slice(0, 5);
+  return `
+  <h2>Últimas partidas</h2>
+  <div class="card">${ms.map(m => {
+    const w1 = m.team1.score > m.team2.score, w2 = m.team2.score > m.team1.score;
+    return `<a class="mrow" href="#/match/${m.id}">
+      <div class="mapchip">${mapName(m.map)}<small>#${m.id}</small></div>
+      <div class="tname r">${teamLabel(m.team1.name)}</div>
+      <div class="score"><span class="${w1 ? "w" : "l"}">${m.team1.score}</span> : <span class="${w2 ? "w" : "l"}">${m.team2.score}</span></div>
+      <div class="tname">${teamLabel(m.team2.name)}</div>
+      <div class="when">${fmtDate(m.end)}</div></a>`;
+  }).join("")}</div>
+  <h2>Top 5 Elo</h2>
+  ${rankTable(top)}`;
+}
+
+function rankTable(ps) {
+  return `<div class="card tablewrap"><table>
+    <thead><tr><th>#  Jogador</th><th>Elo</th><th>Partidas</th><th>Vitórias</th><th>Win %</th><th>K/D</th><th>K/R</th><th>ADR</th><th>HS %</th><th>K</th><th>D</th><th>A</th></tr></thead>
+    <tbody>${ps.map((p, i) => `<tr>
+      <td><a class="who" href="#/player/${p.steamid}"><span class="mono" style="color:var(--muted);width:20px">${i + 1}</span>${lvl(p.level)}${esc(p.name)}</a></td>
+      <td class="num"><b>${p.elo}</b></td><td class="num">${p.matches}</td><td class="num">${p.w}</td>
+      <td class="num">${p.winrate}%</td><td class="num ${p.kd >= 1 ? "pos" : "neg"}">${p.kd.toFixed(2)}</td>
+      <td class="num">${p.kr.toFixed(2)}</td><td class="num">${p.adr}</td><td class="num">${p.hsp}%</td>
+      <td class="num">${p.k}</td><td class="num">${p.d}</td><td class="num">${p.a}</td></tr>`).join("")}</tbody></table></div>`;
+}
+
+function ranking() {
+  if (!DATA.players.length) return `<div class="card empty">Sem jogadores ainda.</div>`;
+  return `<h2>Ranking por Elo</h2>${rankTable(DATA.players)}
+  <p style="color:var(--muted);font-size:12px;margin-top:12px">Elo próprio deste servidor: todos começam com 1000; vitória/derrota rende de ~10 a ~40 pontos conforme a força dos times. Nível 1–10 pelas faixas ${DATA.levels.join(" / ")}.</p>`;
+}
+
+const COLS = [
+  ["K", p => p.k], ["A", p => p.a], ["D", p => p.d],
+  ["K/D", p => p.kd, p => `<span class="${p.kd >= 1 ? "pos" : "neg"}">${p.kd.toFixed(2)}</span>`],
+  ["+/-", p => p.k - p.d, p => sign(p.k - p.d)],
+  ["ADR", p => p.adr], ["K/R", p => p.kr, p => p.kr.toFixed(2)], ["HS %", p => p.hsp, p => p.hsp + "%"],
+  ["5K", p => p.k5], ["4K", p => p.k4], ["3K", p => p.k3], ["2K", p => p.k2],
+  ["Entry", p => p.entry_w, p => `${p.entry_w}/${p.entry}`],
+  ["1vX", p => p.v1_w + p.v2_w, p => `${p.v1_w + p.v2_w}`],
+  ["Dano util.", p => p.util_dmg], ["Cegou", p => p.flashed],
+  ["Elo", p => p.elo_delta, p => sign(p.elo_delta)],
+];
+
+function teamTable(m, team, sortKey) {
+  let ps = m.players.filter(p => p.team === team.name);
+  const c = COLS[sortKey] || COLS[0];
+  ps = ps.slice().sort((a, b) => c[1](b) - c[1](a));
+  const won = m.winner === team.name, lost = m.winner && !won;
+  return `<div class="card" style="margin-top:12px">
+    <div class="thead-team"><span>${teamLabel(team.name)}<span class="tag ${won ? "W" : lost ? "L" : "D"}">${won ? "VITÓRIA" : lost ? "DERROTA" : "EMPATE"}</span></span><span class="score">${team.score}</span></div>
+    <div class="tablewrap"><table><thead><tr><th>Jogador</th>${COLS.map((c, i) => `<th data-s="${i}">${c[0]}</th>`).join("")}</tr></thead>
+    <tbody>${ps.map(p => `<tr><td><a class="who" href="#/player/${p.steamid}">${lvl(p.level)}${esc(p.name)}</a></td>
+      ${COLS.map(c => `<td class="num">${c[2] ? c[2](p) : c[1](p)}</td>`).join("")}</tr>`).join("")}</tbody></table></div></div>`;
+}
+
+function match(id, sortKey = 0) {
+  const m = DATA.matches.find(x => String(x.id) === id);
+  if (!m) return `<a class="back" href="#/">← Partidas</a><div class="card empty">Partida não encontrada.</div>`;
+  const w1 = m.team1.score > m.team2.score, w2 = m.team2.score > m.team1.score;
+  return `<a class="back" href="#/">← Partidas</a>
+  <div class="card hero">
+    <div class="tn r">${teamLabel(m.team1.name)}</div>
+    <div><div class="big"><span class="${w1 ? "w" : w2 ? "l" : ""}">${m.team1.score}</span> : <span class="${w2 ? "w" : w1 ? "l" : ""}">${m.team2.score}</span></div>
+      <div class="meta">${mapName(m.map)} · ${m.rounds} rounds · ${fmtDate(m.end)}</div></div>
+    <div class="tn">${teamLabel(m.team2.name)}</div>
+  </div>
+  <div id="tables">${teamTable(m, m.team1, sortKey)}${teamTable(m, m.team2, sortKey)}</div>`;
+}
+
+function sparkline(hist) {
+  const pts = hist.slice().reverse().map(h => h.elo);
+  pts.unshift(pts.length ? hist[hist.length - 1].elo - hist[hist.length - 1].delta : 1000);
+  if (pts.length < 2) return "";
+  const W = 1000, H = 140, pad = 12, min = Math.min(...pts) - 10, max = Math.max(...pts) + 10;
+  const x = i => pad + i * (W - 2 * pad) / (pts.length - 1), y = v => H - pad - (v - min) * (H - 2 * pad) / (max - min || 1);
+  const d = pts.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+  return `<div class="card spark"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <path d="${d}L${x(pts.length - 1)},${H}L${x(0)},${H}Z" fill="var(--accent)" opacity=".08"/>
+    <path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2.5" vector-effect="non-scaling-stroke"/>
+    ${pts.map((v, i) => `<circle cx="${x(i)}" cy="${y(v)}" r="3" fill="var(--accent)"><title>${v}</title></circle>`).join("")}
+  </svg></div>`;
+}
+
+function player(sid) {
+  const p = DATA.players.find(x => x.steamid === sid);
+  if (!p) return `<a class="back" href="#/ranking">← Ranking</a><div class="card empty">Jogador não encontrado.</div>`;
+  const tile = (k, v) => `<div class="card tile"><div class="k">${k}</div><div class="v">${v}</div></div>`;
+  return `<a class="back" href="#/ranking">← Ranking</a>
+  <div class="card prof">${lvl(p.level)}
+    <div><h1>${esc(p.name)}</h1><div class="sub"><a href="https://steamcommunity.com/profiles/${esc(p.steamid)}" target="_blank" rel="noopener">Perfil Steam ↗</a></div></div>
+    <div class="elo"><div class="tile k" style="padding:0">Elo</div><b>${p.elo}</b></div>
+  </div>
+  <h2>Geral</h2>
+  <div class="grid tiles">
+    ${tile("Partidas", p.matches)}${tile("Vitórias", `${p.w} <span style="font-size:14px;color:var(--muted)">(${p.winrate}%)</span>`)}
+    ${tile("K/D", p.kd.toFixed(2))}${tile("K/R", p.kr.toFixed(2))}${tile("ADR", p.adr)}${tile("HS %", p.hsp + "%")}
+    ${tile("Kills", p.k)}${tile("Mortes", p.d)}${tile("Assist.", p.a)}${tile("Aces", p.k5)}${tile("Entry", `${p.entry_w}/${p.entry}`)}${tile("1v1", `${p.v1_w}/${p.v1}`)}
+  </div>
+  <h2>Elo por partida</h2>${sparkline(p.history)}
+  <h2>Partidas</h2>
+  <div class="card tablewrap"><table><thead><tr><th>Mapa</th><th>Resultado</th><th>Placar</th><th>K</th><th>D</th><th>A</th><th>K/D</th><th>ADR</th><th>HS %</th><th>Elo</th><th>Data</th></tr></thead>
+  <tbody>${p.history.map(h => `<tr onclick="location.hash='#/match/${h.match}'" style="cursor:pointer">
+    <td style="text-transform:capitalize;font-weight:600">${mapName(h.map)}</td><td><span class="tag ${h.result}" style="margin:0">${{W: "V", L: "D", D: "E"}[h.result]}</span></td>
+    <td class="num">${esc(h.score)}</td><td class="num">${h.k}</td><td class="num">${h.d}</td><td class="num">${h.a}</td>
+    <td class="num ${h.kd >= 1 ? "pos" : "neg"}">${h.kd.toFixed(2)}</td><td class="num">${h.adr}</td><td class="num">${h.hsp}%</td>
+    <td class="num">${h.elo} (${sign(h.delta)})</td><td class="num" style="color:var(--muted)">${fmtDate(h.date)}</td></tr>`).join("")}</tbody></table></div>`;
+}
+
+function route() {
+  if (!DATA) return;
+  const [, r, arg] = (location.hash || "#/").split("/");
+  document.querySelectorAll("nav a").forEach(a => a.classList.toggle("on", a.dataset.r === (r || "home")));
+  const app = $("#app");
+  if (r === "match") {
+    app.innerHTML = match(arg);
+    app.onclick = e => { const th = e.target.closest("th[data-s]"); if (th) { const m = DATA.matches.find(x => String(x.id) === arg); $("#tables").innerHTML = teamTable(m, m.team1, +th.dataset.s) + teamTable(m, m.team2, +th.dataset.s); } };
+  } else {
+    app.onclick = null;
+    app.innerHTML = r === "ranking" ? ranking() : r === "player" ? player(arg) : home();
+  }
+  window.scrollTo(0, 0);
+}
+
+fetch("data.json?t=" + Date.now(), {cache: "no-store"})
+  .then(r => r.json())
+  .then(d => { DATA = d; $("#upd").textContent = "Atualizado " + new Date(d.generated).toLocaleString("pt-BR"); route(); })
+  .catch(() => { $("#app").innerHTML = `<div class="card empty">Não consegui carregar os dados.</div>`; });
+addEventListener("hashchange", route);
+</script>
+</body>
+</html>
