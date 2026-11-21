@@ -232,9 +232,16 @@ function route() {
   window.scrollTo(0, 0);
 }
 
-fetch("data.json?t=" + Date.now(), {cache: "no-store"})
+const DEMO = new URLSearchParams(location.search).has("demo");
+fetch((DEMO ? "demo.json" : "data.json") + "?t=" + Date.now(), {cache: "no-store"})
   .then(r => r.json())
-  .then(d => { DATA = d; $("#upd").textContent = "Atualizado " + new Date(d.generated).toLocaleString("pt-BR"); route(); })
+  .then(d => {
+    DATA = d;
+    $("#upd").textContent = DEMO ? "" : "Atualizado " + new Date(d.generated).toLocaleString("pt-BR");
+    if (DEMO) document.querySelector("header").insertAdjacentHTML("afterend",
+      `<div style="background:#c9a227;color:#111;text-align:center;font-weight:700;padding:6px;font-size:12px">DADOS SIMULADOS — demonstração. <a href="./" style="text-decoration:underline">Ver dados reais</a></div>`);
+    route();
+  })
   .catch(() => { $("#app").innerHTML = `<div class="card empty">Não consegui carregar os dados.</div>`; });
 addEventListener("hashchange", route);
 </script>
