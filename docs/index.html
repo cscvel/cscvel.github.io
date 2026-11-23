@@ -127,23 +127,23 @@ const perfCell = v => `<td class="num ${v == null ? "" : v >= 1 ? "pos" : "neg"}
 
 function rankTable(ps) {
   return `<div class="card tablewrap"><table>
-    <thead><tr><th>#  Jogador</th><th>Elo</th><th title="Média de kills, ADR e K/D comparados com o lobby (1.00 = na média)">Desemp.</th><th>Partidas</th><th>Vitórias</th><th>Win %</th><th>Kills</th><th>K/D</th><th>ADR</th><th>K/R</th><th>HS %</th><th>D</th><th>A</th></tr></thead>
+    <thead><tr><th>#  Jogador</th><th>Elo</th><th title="Média de kills, mortes, ADR e K/D comparados com o lobby (1.00 = na média)">Desemp.</th><th>Partidas</th><th>Vitórias</th><th>Derrotas</th><th>Win %</th><th>Kills</th><th>Mortes</th><th>K/D</th><th>ADR</th><th>K/R</th><th>HS %</th><th>A</th></tr></thead>
     <tbody>${ps.map((p, i) => `<tr>
       <td><a class="who" href="#/player/${p.steamid}"><span class="mono" style="color:var(--muted);width:20px">${i + 1}</span>${lvl(p.level)}${esc(p.name)}</a></td>
-      <td class="num"><b>${p.elo}</b></td>${perfCell(p.perf)}<td class="num">${p.matches}</td><td class="num">${p.w}</td>
-      <td class="num">${p.winrate}%</td><td class="num"><b>${p.k}</b></td><td class="num ${p.kd >= 1 ? "pos" : "neg"}">${p.kd.toFixed(2)}</td>
+      <td class="num"><b>${p.elo}</b></td>${perfCell(p.perf)}<td class="num">${p.matches}</td><td class="num pos">${p.w}</td><td class="num neg">${p.l}</td>
+      <td class="num">${p.winrate}%</td><td class="num"><b>${p.k}</b></td><td class="num"><b>${p.d}</b></td><td class="num ${p.kd >= 1 ? "pos" : "neg"}">${p.kd.toFixed(2)}</td>
       <td class="num">${p.adr}</td><td class="num">${p.kr.toFixed(2)}</td><td class="num">${p.hsp}%</td>
-      <td class="num">${p.d}</td><td class="num">${p.a}</td></tr>`).join("")}</tbody></table></div>`;
+      <td class="num">${p.a}</td></tr>`).join("")}</tbody></table></div>`;
 }
 
 function ranking() {
   if (!DATA.players.length) return `<div class="card empty">Sem jogadores ainda.</div>`;
   return `<h2>Ranking por Elo</h2>${rankTable(DATA.players)}
-  <p style="color:var(--muted);font-size:12px;margin-top:12px">Elo próprio deste servidor: todos começam com 1000. Cada partida vale até ±50 conforme a força dos times, multiplicado pelo desempenho (kills, ADR e K/D comparados com a média do lobby): quem joga acima da média ganha mais na vitória e perde menos na derrota (0,5× a 1,5×). Nível 1–10 pelas faixas ${DATA.levels.join(" / ")}.</p>`;
+  <p style="color:var(--muted);font-size:12px;margin-top:12px">Elo próprio deste servidor: todos começam com 1000. Cada partida vale até ±50 conforme a força dos times, multiplicado pelo desempenho (kills, mortes, ADR e K/D comparados com a média do lobby): quem joga acima da média ganha mais na vitória e perde menos na derrota (0,5× a 1,5×). Nível 1–10 pelas faixas ${DATA.levels.join(" / ")}.</p>`;
 }
 
 const COLS = [
-  ["K", p => p.k], ["A", p => p.a], ["D", p => p.d],
+  ["Kills", p => p.k], ["Mortes", p => p.d], ["A", p => p.a],
   ["K/D", p => p.kd, p => `<span class="${p.kd >= 1 ? "pos" : "neg"}">${p.kd.toFixed(2)}</span>`],
   ["+/-", p => p.k - p.d, p => sign(p.k - p.d)],
   ["ADR", p => p.adr], ["K/R", p => p.kr, p => p.kr.toFixed(2)], ["HS %", p => p.hsp, p => p.hsp + "%"],
@@ -212,7 +212,7 @@ function player(sid) {
   </div>
   <h2>Elo por partida</h2>${sparkline(p.history)}
   <h2>Partidas</h2>
-  <div class="card tablewrap"><table><thead><tr><th>Mapa</th><th>Resultado</th><th>Placar</th><th>K</th><th>D</th><th>A</th><th>K/D</th><th>ADR</th><th>HS %</th><th>Elo</th><th>Data</th></tr></thead>
+  <div class="card tablewrap"><table><thead><tr><th>Mapa</th><th>Resultado</th><th>Placar</th><th>Kills</th><th>Mortes</th><th>A</th><th>K/D</th><th>ADR</th><th>HS %</th><th>Elo</th><th>Data</th></tr></thead>
   <tbody>${p.history.map(h => `<tr onclick="location.hash='#/match/${h.match}'" style="cursor:pointer">
     <td style="text-transform:capitalize;font-weight:600">${mapName(h.map)}</td><td><span class="tag ${h.result}" style="margin:0">${{W: "V", L: "D", D: "E"}[h.result]}</span></td>
     <td class="num">${esc(h.score)}</td><td class="num">${h.k}</td><td class="num">${h.d}</td><td class="num">${h.a}</td>

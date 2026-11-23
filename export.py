@@ -21,9 +21,11 @@ ELO_K = 50
 # limite inferior de cada nivel (nivel 1 = abaixo de 501)
 LEVELS = [501, 751, 901, 1051, 1201, 1351, 1531, 1751, 2001]
 
-# Desempenho no Elo: media de (kills, ADR, K/D) / media do lobby, cada um limitado a PERF_CAP.
+# Desempenho no Elo: media de kills, mortes (invertido: menos e melhor), ADR e K/D
+# comparados com a media do lobby, cada um limitado a PERF_CAP.
 # O multiplicador fica entre PERF_MIN e PERF_MAX (0.5x a 1.5x do Elo normal).
-PERF_STATS = ("k", "adr", "kd")
+PERF_STATS = ("k", "d", "adr", "kd")
+PERF_LOWER_BETTER = ("d",)
 PERF_CAP = 2.5
 PERF_MIN, PERF_MAX = 0.5, 1.5
 
@@ -109,11 +111,18 @@ def build(con):
                 "kd": ratio(p["k"], p["d"]), "kr": ratio(p["k"], rounds),
                 "adr": round(p["dmg"] / rounds, 1), "hsp": pct(p["hs"], p["k"]),
             })
-        # Desempenho: kills, ADR e K/D comparados com a media do lobby (1.00 = na media).
-        # Kills por round e kills totais dao o mesmo numero no mesmo mapa; uso kills totais.
+        # Desempenho: kills, mortes, ADR e K/D comparados com a media do lobby (1.00 = na media).
         lobby = {s: sum(p[s] for p in players) / len(players) for s in PERF_STATS}
+
+        def rel(p, s):
+            if not lobby[s]:
+                return 1.0
+            if s in PERF_LOWER_BETTER:  # morreu menos que a media -> acima de 1
+                return min(lobby[s] / max(p[s], 1), PERF_CAP)
+            return min(p[s] / lobby[s], PERF_CAP)
+
         for p in players:
-            parts = [min(p[s] / lobby[s], PERF_CAP) if lobby[s] else 1.0 for s in PERF_STATS]
+            parts = [rel(p, s) for s in PERF_STATS]
             p["perf"] = round(sum(parts) / len(parts), 2)
 
         for p in players:
