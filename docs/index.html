@@ -123,21 +123,23 @@ function home() {
   ${rankTable(top)}`;
 }
 
+const perfCell = v => `<td class="num ${v == null ? "" : v >= 1 ? "pos" : "neg"}">${v == null ? "–" : v.toFixed(2)}</td>`;
+
 function rankTable(ps) {
   return `<div class="card tablewrap"><table>
-    <thead><tr><th>#  Jogador</th><th>Elo</th><th>Partidas</th><th>Vitórias</th><th>Win %</th><th>K/D</th><th>K/R</th><th>ADR</th><th>HS %</th><th>K</th><th>D</th><th>A</th></tr></thead>
+    <thead><tr><th>#  Jogador</th><th>Elo</th><th title="Média de kills, ADR e K/D comparados com o lobby (1.00 = na média)">Desemp.</th><th>Partidas</th><th>Vitórias</th><th>Win %</th><th>Kills</th><th>K/D</th><th>ADR</th><th>K/R</th><th>HS %</th><th>D</th><th>A</th></tr></thead>
     <tbody>${ps.map((p, i) => `<tr>
       <td><a class="who" href="#/player/${p.steamid}"><span class="mono" style="color:var(--muted);width:20px">${i + 1}</span>${lvl(p.level)}${esc(p.name)}</a></td>
-      <td class="num"><b>${p.elo}</b></td><td class="num">${p.matches}</td><td class="num">${p.w}</td>
-      <td class="num">${p.winrate}%</td><td class="num ${p.kd >= 1 ? "pos" : "neg"}">${p.kd.toFixed(2)}</td>
-      <td class="num">${p.kr.toFixed(2)}</td><td class="num">${p.adr}</td><td class="num">${p.hsp}%</td>
-      <td class="num">${p.k}</td><td class="num">${p.d}</td><td class="num">${p.a}</td></tr>`).join("")}</tbody></table></div>`;
+      <td class="num"><b>${p.elo}</b></td>${perfCell(p.perf)}<td class="num">${p.matches}</td><td class="num">${p.w}</td>
+      <td class="num">${p.winrate}%</td><td class="num"><b>${p.k}</b></td><td class="num ${p.kd >= 1 ? "pos" : "neg"}">${p.kd.toFixed(2)}</td>
+      <td class="num">${p.adr}</td><td class="num">${p.kr.toFixed(2)}</td><td class="num">${p.hsp}%</td>
+      <td class="num">${p.d}</td><td class="num">${p.a}</td></tr>`).join("")}</tbody></table></div>`;
 }
 
 function ranking() {
   if (!DATA.players.length) return `<div class="card empty">Sem jogadores ainda.</div>`;
   return `<h2>Ranking por Elo</h2>${rankTable(DATA.players)}
-  <p style="color:var(--muted);font-size:12px;margin-top:12px">Elo próprio deste servidor: todos começam com 1000; vitória/derrota rende de ~10 a ~40 pontos conforme a força dos times. Nível 1–10 pelas faixas ${DATA.levels.join(" / ")}.</p>`;
+  <p style="color:var(--muted);font-size:12px;margin-top:12px">Elo próprio deste servidor: todos começam com 1000. Cada partida vale até ±50 conforme a força dos times, multiplicado pelo desempenho (kills, ADR e K/D comparados com a média do lobby): quem joga acima da média ganha mais na vitória e perde menos na derrota (0,5× a 1,5×). Nível 1–10 pelas faixas ${DATA.levels.join(" / ")}.</p>`;
 }
 
 const COLS = [
@@ -145,6 +147,7 @@ const COLS = [
   ["K/D", p => p.kd, p => `<span class="${p.kd >= 1 ? "pos" : "neg"}">${p.kd.toFixed(2)}</span>`],
   ["+/-", p => p.k - p.d, p => sign(p.k - p.d)],
   ["ADR", p => p.adr], ["K/R", p => p.kr, p => p.kr.toFixed(2)], ["HS %", p => p.hsp, p => p.hsp + "%"],
+  ["Desemp.", p => p.perf ?? 0, p => p.perf == null ? "–" : `<span class="${p.perf >= 1 ? "pos" : "neg"}">${p.perf.toFixed(2)}</span>`],
   ["5K", p => p.k5], ["4K", p => p.k4], ["3K", p => p.k3], ["2K", p => p.k2],
   ["Entry", p => p.entry_w, p => `${p.entry_w}/${p.entry}`],
   ["1vX", p => p.v1_w + p.v2_w, p => `${p.v1_w + p.v2_w}`],

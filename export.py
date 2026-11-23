@@ -21,6 +21,12 @@ ELO_K = 50
 # limite inferior de cada nivel (nivel 1 = abaixo de 501)
 LEVELS = [501, 751, 901, 1051, 1201, 1351, 1531, 1751, 2001]
 
+# Desempenho no Elo: media de (kills, ADR, K/D) / media do lobby, cada um limitado a PERF_CAP.
+# O multiplicador fica entre PERF_MIN e PERF_MAX (0.5x a 1.5x do Elo normal).
+PERF_STATS = ("k", "adr", "kd")
+PERF_CAP = 2.5
+PERF_MIN, PERF_MAX = 0.5, 1.5
+
 
 def level_of(elo):
     return 1 + sum(1 for t in LEVELS if elo >= t)
@@ -99,18 +105,31 @@ def build(con):
                for t, ps in teams.items()}
 
         for p in players:
+            p.update({
+                "kd": ratio(p["k"], p["d"]), "kr": ratio(p["k"], rounds),
+                "adr": round(p["dmg"] / rounds, 1), "hsp": pct(p["hs"], p["k"]),
+            })
+        # Desempenho: kills, ADR e K/D comparados com a media do lobby (1.00 = na media).
+        # Kills por round e kills totais dao o mesmo numero no mesmo mapa; uso kills totais.
+        lobby = {s: sum(p[s] for p in players) / len(players) for s in PERF_STATS}
+        for p in players:
+            parts = [min(p[s] / lobby[s], PERF_CAP) if lobby[s] else 1.0 for s in PERF_STATS]
+            p["perf"] = round(sum(parts) / len(parts), 2)
+
+        for p in players:
             own = p["team"]
             opp = t2 if own == t1 else t1
             exp = 1 / (1 + 10 ** ((avg.get(opp, ELO_START) - avg.get(own, ELO_START)) / 400))
             score = 0.5 if not winner else (1.0 if own == winner else 0.0)
             before = elo.get(p["steamid"], ELO_START)
-            delta = round(ELO_K * (score - exp))
+            base = ELO_K * (score - exp)
+            # acima da media: ganha mais na vitoria e perde menos na derrota (e vice-versa)
+            f = max(PERF_MIN, min(PERF_MAX, p["perf"]))
+            delta = round(base * f if base >= 0 else base * (2 - f))
             elo[p["steamid"]] = before + delta
             p.update({
                 "result": "D" if not winner else ("W" if own == winner else "L"),
                 "elo_before": before, "elo_after": before + delta, "elo_delta": delta,
-                "kd": ratio(p["k"], p["d"]), "kr": ratio(p["k"], rounds),
-                "adr": round(p["dmg"] / rounds, 1), "hsp": pct(p["hs"], p["k"]),
             })
 
             g = agg.setdefault(p["steamid"], {
@@ -125,11 +144,12 @@ def build(con):
             for key in ("k", "d", "a", "dmg", "hs", "k5", "k4", "k3", "entry", "entry_w", "v1", "v1_w"):
                 g[key] += p[key]
             g["rounds"] += rounds
+            g["perf_sum"] = g.get("perf_sum", 0) + p["perf"]
             g["history"].append({
                 "match": mp["matchid"], "map": mp["mapname"], "date": mp["end_time"],
                 "result": p["result"], "score": f"{s1}-{s2}" if own == t1 else f"{s2}-{s1}",
                 "k": p["k"], "d": p["d"], "a": p["a"], "kd": p["kd"], "adr": p["adr"],
-                "hsp": p["hsp"], "elo": p["elo_after"], "delta": delta,
+                "hsp": p["hsp"], "perf": p["perf"], "elo": p["elo_after"], "delta": delta,
             })
 
         matches.append({
@@ -148,6 +168,7 @@ def build(con):
             "kd": ratio(g["k"], g["d"]), "kr": ratio(g["k"], g["rounds"]),
             "adr": round(g["dmg"] / g["rounds"], 1) if g["rounds"] else 0.0,
             "hsp": pct(g["hs"], g["k"]),
+            "perf": round(g.pop("perf_sum", 0) / g["matches"], 2) if g["matches"] else 1.0,
             "history": list(reversed(g["history"])),
         })
         out_players.append(g)
